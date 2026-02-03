@@ -33,7 +33,11 @@ export function ProductDetails({ product, onClose }: ProductDetailsProps) {
         onClick={(e) => e.stopPropagation()}
         style={{
           width: 'min(600px, 100%)',
-          background: '#fff',
+          background: 'rgba(15, 20, 40, 0.95)',
+color: 'rgba(255,255,255,0.92)',
+border: '1px solid rgba(255,255,255,0.16)',
+boxShadow: '0 18px 60px rgba(0,0,0,0.55)',
+
           borderRadius: 12,
           padding: 16,
         }}

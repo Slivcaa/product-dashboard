@@ -8,6 +8,7 @@ import { ProductDetails } from './components/ProductDetails'
 type SortBy = 'title' | 'price' | 'rating'
 type SortDir = 'asc' | 'desc'
 
+
 function App() {
  const { products, loading, fetching, error, refetch } = useProducts()
 
@@ -84,7 +85,7 @@ useEffect(() => {
 }, [products, selectedId])
 
   return (
-    <>
+    <div className="page">
       <Filters
         query={query}
         onQueryChange={setQuery}
@@ -93,6 +94,7 @@ useEffect(() => {
         categories={categories}
       />
 
+<div className="statusRow">
 <button onClick={() => refetch()} style={{ marginTop: 12 }}>
   Refetch
 </button>
@@ -102,6 +104,7 @@ useEffect(() => {
 {error && products.length === 0 && (
   <p style={{ color: 'red' }}>Failed to load. Try again.</p>
 )}
+</div>
 
 
 
@@ -140,6 +143,7 @@ useEffect(() => {
       <h1>Product Dashboard</h1>
 
       {loading ? (
+        
         <p>Loading...</p>
       ) : (
         <ul>
@@ -164,7 +168,9 @@ useEffect(() => {
 
 
       <p>Found: {filteredProducts.length}</p>
-    </>
+   
+    </div>
+  
   )
 }
 
