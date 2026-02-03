@@ -20,6 +20,7 @@ function App() {
 
   const [sortBy, setSortBy] = useState<SortBy>('title')
   const [sortDir, setSortDir] = useState<SortDir>('asc')
+ 
   useEffect(() => {
   const params = new URLSearchParams(window.location.search)
 
@@ -27,12 +28,15 @@ function App() {
   const c = params.get('category')
   const s = params.get('sortBy')
   const d = params.get('dir')
+  const sel = params.get('selected')
 
   if (q) setQuery(q)
   if (c) setCategory(c)
   if (s === 'title' || s === 'price' || s === 'rating') setSortBy(s)
   if (d === 'asc' || d === 'desc') setSortDir(d)
+  if (sel) setSelectedId(Number(sel))
 }, [])
+
 
 useEffect(() => {
   const params = new URLSearchParams()
@@ -41,13 +45,15 @@ useEffect(() => {
   if (category !== 'all') params.set('category', category)
   params.set('sortBy', sortBy)
   params.set('dir', sortDir)
+  if (selectedId !== null) params.set('selected', String(selectedId))
+
 
   window.history.replaceState(
     null,
     '',
     `${window.location.pathname}?${params.toString()}`
   )
-}, [query, category, sortBy, sortDir])
+}, [query, category, sortBy, sortDir, selectedId])
 
   const categories = useMemo(
     () => Array.from(new Set(products.map((p) => p.category))),
