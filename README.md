@@ -1,37 +1,42 @@
 # Product Dashboard
 
-A small React + TypeScript dashboard that loads products from an API, supports search/filter/sort, deep-links state via URL, and shows product details in a modal.
+A React + TypeScript product dashboard with server-side pagination, filtering, sorting, and shareable URL state.
 
-## Demo features
-- Fetch products from API (server state via React Query)
-- Loading vs background fetching (no UI flicker)
-- Search by title
+## Features
+- Server-side pagination (API-driven)
+- Product search by title
 - Filter by category
-- Sort by title / price / rating (asc/desc)
-- URL sync for filters + selected product (shareable links)
-- Product details modal (close on backdrop click / Escape)
-- Layout shift prevention (stable UI)
+- Sort by title / price / rating (asc / desc)
+- URL-synced state (filters, sorting, page, selected product)
+- Product details modal
+- Stable layout (no layout shift on loading or refetch)
+- Background fetching with cached data
 
 ## Tech stack
-- React + TypeScript
+- React
+- TypeScript
 - Vite
 - @tanstack/react-query
+
+## Data fetching
+Products are fetched from the DummyJSON API using React Query.
+Pagination is handled on the server via `limit` and `skip`.
+Previous page data is preserved while new data is loading.
+
+## Project structure
+- `src/hooks/useProducts.ts` — server-state fetching & pagination logic
+- `src/components/Filters.tsx` — search & category filters
+- `src/components/ProductDetails.tsx` — product details modal
+- `src/App.tsx` — UI state, filtering, sorting, URL sync, pagination
 
 ## Run locally
 ```bash
 npm install
 npm run dev
-Project structure
-src/hooks/useProducts.ts — React Query data fetching + caching
-
-src/components/Filters.tsx — reusable search + category filter UI
-
-src/components/ProductDetails.tsx — product modal
-
-src/App.tsx — state composition, filtering/sorting, URL sync
 
 Notes:
-This project intentionally focuses on:
-clean state management (UI state vs server state)
-component separation
-UX details (shareable URLs, stable layout, background refetch)
+
+This project demonstrates:
+separation of server state and UI state
+clean React architecture
+attention to UX details (URL state, stable layout, background updates)
