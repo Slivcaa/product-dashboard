@@ -10,27 +10,42 @@ export type Product = {
 
 type ProductsResponse = {
   products: Product[]
+  total: number
+  skip: number
+  limit: number
 }
 
-async function fetchProducts(): Promise<Product[]> {
-  const res = await fetch('https://dummyjson.com/products')
-  if (!res.ok) throw new Error(`HTTP ${res.status}`)
-  const data: ProductsResponse = await res.json()
-  return data.products
+async function fetchProducts(page: number, limit: number): Promise<ProductsResponse> {
+  const safePage = Number.isFinite(page) && page > 0 ? page : 1
+  const safeLimit = Number.isFinite(limit) && limit > 0 ? limit : 12
+
+  const skip = (safePage - 1) * safeLimit
+  const url = `https://dummyjson.com/products?limit=${safeLimit}&skip=${skip}`
+
+  const res = await fetch(url)
+
+  if (!res.ok) {
+    throw new Error(`Failed to fetch products (HTTP ${res.status})`)
+  }
+
+  return (await res.json()) as ProductsResponse
 }
 
-export function useProducts() {
-  const query = useQuery({
-    queryKey: ['products'],
-    queryFn: fetchProducts,
-    staleTime: 1000 * 60, // 1 минута: данные считаются свежими
+export function useProducts(page: number, limit = 12) {
+  const query = useQuery<ProductsResponse, Error>({
+    queryKey: ['products', page, limit],
+    queryFn: () => fetchProducts(page, limit),
+    staleTime: 60_000,
+    // keeps previous page data while new page is loading (no flicker)
+    placeholderData: (prev) => prev,
   })
 
   return {
-  products: query.data ?? [],
-  loading: query.isLoading,
-  fetching: query.isFetching,
-  error: query.error,
-  refetch: query.refetch,
-}
+    products: query.data?.products ?? [],
+    total: query.data?.total ?? 0,
+    loading: query.isLoading,
+    fetching: query.isFetching,
+    error: query.error ?? null,
+    refetch: query.refetch,
+  }
 }

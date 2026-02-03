@@ -253,3 +253,14 @@ text-rendering: optimizeLegibility;
 .errorInline {
   color: rgba(255, 120, 120, 0.95);
 }
+.pagination {
+  margin-top: 18px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: center;
+}
+
+.pageInfo {
+  color: var(--muted);
+}

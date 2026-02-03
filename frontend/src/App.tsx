@@ -1,60 +1,77 @@
-import { useMemo, useState, useEffect } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import './App.css'
 import { useProducts } from './hooks/useProducts'
 import { Filters } from './components/Filters'
 import { ProductDetails } from './components/ProductDetails'
 
-
 type SortBy = 'title' | 'price' | 'rating'
 type SortDir = 'asc' | 'desc'
 
-
 function App() {
- const { products, loading, fetching, error, refetch } = useProducts()
+  // pagination first (must be declared before using in hook)
+  const limit = 12
+  const [page, setPage] = useState(1)
 
+  // server data
+  const { products, total, loading, fetching, error } = useProducts(page, limit)
 
-
+  // ui state
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState('all')
   const [selectedId, setSelectedId] = useState<number | null>(null)
-
-
   const [sortBy, setSortBy] = useState<SortBy>('title')
   const [sortDir, setSortDir] = useState<SortDir>('asc')
- 
+
+  // read state from URL on first mount
   useEffect(() => {
-  const params = new URLSearchParams(window.location.search)
+    const params = new URLSearchParams(window.location.search)
 
-  const q = params.get('q')
-  const c = params.get('category')
-  const s = params.get('sortBy')
-  const d = params.get('dir')
-  const sel = params.get('selected')
+    const q = params.get('q')
+    const c = params.get('category')
+    const s = params.get('sortBy')
+    const d = params.get('dir')
+    const sel = params.get('selected')
+    const p = params.get('page')
 
-  if (q) setQuery(q)
-  if (c) setCategory(c)
-  if (s === 'title' || s === 'price' || s === 'rating') setSortBy(s)
-  if (d === 'asc' || d === 'desc') setSortDir(d)
-  if (sel) setSelectedId(Number(sel))
-}, [])
+    if (q) setQuery(q)
+    if (c) setCategory(c)
+    if (s === 'title' || s === 'price' || s === 'rating') setSortBy(s)
+    if (d === 'asc' || d === 'desc') setSortDir(d)
 
+    if (sel) {
+      const n = Number(sel)
+      if (!Number.isNaN(n)) setSelectedId(n)
+    }
 
-useEffect(() => {
-  const params = new URLSearchParams()
+    if (p) {
+      const n = Number(p)
+      if (!Number.isNaN(n) && n >= 1) setPage(n)
+    }
+  }, [])
 
-  if (query) params.set('q', query)
-  if (category !== 'all') params.set('category', category)
-  params.set('sortBy', sortBy)
-  params.set('dir', sortDir)
-  if (selectedId !== null) params.set('selected', String(selectedId))
+  // write state to URL
+  useEffect(() => {
+    const params = new URLSearchParams()
 
+    if (query) params.set('q', query)
+    if (category !== 'all') params.set('category', category)
 
-  window.history.replaceState(
-    null,
-    '',
-    `${window.location.pathname}?${params.toString()}`
-  )
-}, [query, category, sortBy, sortDir, selectedId])
+    params.set('sortBy', sortBy)
+    params.set('dir', sortDir)
+    params.set('page', String(page))
+
+    if (selectedId !== null) params.set('selected', String(selectedId))
+
+    const qs = params.toString()
+    window.history.replaceState(null, '', `${window.location.pathname}?${qs}`)
+  }, [query, category, sortBy, sortDir, selectedId, page])
+
+  // UX: when filters/sorting change, go back to first page
+  useEffect(() => {
+    setPage(1)
+  }, [query, category, sortBy, sortDir])
+
+  const totalPages = Math.max(1, Math.ceil(total / limit))
 
   const categories = useMemo(
     () => Array.from(new Set(products.map((p) => p.category))),
@@ -80,9 +97,9 @@ useEffect(() => {
   }, [filteredProducts, sortBy, sortDir])
 
   const selectedProduct = useMemo(() => {
-  if (selectedId === null) return null
-  return products.find((p) => p.id === selectedId) ?? null
-}, [products, selectedId])
+    if (selectedId === null) return null
+    return products.find((p) => p.id === selectedId) ?? null
+  }, [products, selectedId])
 
   return (
     <div className="page">
@@ -94,19 +111,33 @@ useEffect(() => {
         categories={categories}
       />
 
-<div className="statusRow">
-<button onClick={() => refetch()} style={{ marginTop: 12 }}>
-  Refetch
-</button>
+      <div className="pagination">
+        <button
+          className="btn"
+          disabled={page === 1}
+          onClick={() => setPage((p) => Math.max(1, p - 1))}
+        >
+          ← Prev
+        </button>
 
-{fetching && !loading && <span style={{ marginLeft: 8 }}>Updating…</span>}
+        <span className="pageInfo">
+          Page {page} / {totalPages}
+        </span>
 
-{error && products.length === 0 && (
-  <p style={{ color: 'red' }}>Failed to load. Try again.</p>
-)}
-</div>
+        <button
+          className="btn"
+          disabled={page >= totalPages}
+          onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+        >
+          Next →
+        </button>
 
+        {fetching && !loading ? <span className="pill">Updating…</span> : null}
+      </div>
 
+      {error && products.length === 0 ? (
+        <div className="errorBox">Failed to load. Try again.</div>
+      ) : null}
 
       <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginTop: 12 }}>
         <label>
@@ -127,13 +158,14 @@ useEffect(() => {
         </label>
 
         <button
+          className="btn btnGhost"
           onClick={() => {
             setQuery('')
             setCategory('all')
             setSortBy('title')
             setSortDir('asc')
             setSelectedId(null)
-
+            setPage(1)
           }}
         >
           Reset
@@ -143,34 +175,33 @@ useEffect(() => {
       <h1>Product Dashboard</h1>
 
       {loading ? (
-        
-        <p>Loading...</p>
+        <div className="loading">Loading…</div>
       ) : (
-        <ul>
+        <ul className="grid">
           {sortedProducts.map((product) => (
-           <li
-  key={product.id}
-  onClick={() => setSelectedId(product.id)}
-  style={{
-    cursor: 'pointer',
-    fontWeight: product.id === selectedId ? 'bold' : 'normal',
-  }}
->
-  {product.title} — ${product.price} — ⭐ {product.rating}
-</li>
+            <li
+              key={product.id}
+              className={`card ${product.id === selectedId ? 'cardActive' : ''}`}
+              onClick={() => setSelectedId(product.id)}
+            >
+              <div className="cardTop">
+                <h3 className="cardTitle">{product.title}</h3>
+                <span className="badge">{product.category}</span>
+              </div>
 
+              <div className="cardMeta">
+                <span className="price">${product.price}</span>
+                <span className="rating">⭐ {product.rating}</span>
+              </div>
+            </li>
           ))}
         </ul>
       )}
-{selectedProduct && (
-  <ProductDetails product={selectedProduct} onClose={() => setSelectedId(null)} />
-)}
 
-
-      <p>Found: {filteredProducts.length}</p>
-   
+      {selectedProduct && (
+        <ProductDetails product={selectedProduct} onClose={() => setSelectedId(null)} />
+      )}
     </div>
-  
   )
 }
 
